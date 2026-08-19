@@ -1,0 +1,183 @@
+#!/usr/bin/env python
+from scipy.stats import gmean
+from statistics import median
+import pandas as pd
+
+
+def parse_args():
+    import argparse
+
+    # Argument definition
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-s",
+        "--spectra",
+        metavar="spectra(.tsv/.csv)",
+        type=str,
+        help="Input mutation spectra counts to correct",
+        dest="spectra",
+        required=True,
+    )
+    parser.add_argument(
+        "-k",
+        "--kmer",
+        metavar="Kmer.txt",
+        type=str,
+        help="Input ancestral K-mer counts from jellyfish",
+        dest="kmer",
+        required=True,
+    )
+    parser.add_argument(
+        "-m",
+        "--mode",
+        metavar="mode",
+        type=int,
+        help="Correction mode as N/K (1) or N/T/K (2) (Default: 1)",
+        dest="mode",
+        required=False,
+        default=1,
+    )
+    parser.add_argument(
+        "--distinct",
+        help="Consider full spectrum of initial K-mers (i.e. ATC/GAT are the treated separately; Default: False)",
+        dest="distinct",
+        action="store_true",
+    )
+    # parser.add_argument("-o", "--out", metavar = 'prefix', type = str, help = 'Output file.',\
+    #                         dest = 'outname', required = False, default = "myanc.fa")
+    return parser.parse_args()
+
+
+def invert_kmer(kmer):
+    convert = {"A": "T", "T": "A", "C": "G", "G": "C"}
+    return "".join([convert.get(i, i) for i in kmer[::-1]])
+
+
+def get_base_counts(infile, pool=True):
+    values = {}
+    for line in open(infile):
+        kmer, cnt = line.strip().split()
+        ikmer = invert_kmer(kmer)
+        if kmer not in values:
+            values[kmer] = 0
+        if ikmer not in values:
+            values[ikmer] = 0
+        values[kmer] += float(cnt)
+        if pool:
+            values[ikmer] += float(cnt)
+    return values
+
+
+def correct_values(values, ktgts, kcounts, mode): # total value in the row
+    total = sum(map(int, values))
+    corrected = [
+        (
+            float(values[n]) / float(total)
+            if mode == 1
+            else float(values[n]) / float(total) / kcounts.get(k, 0) #value in the column for that row, divided by total for entire row, dividied by total for kmer
+        )
+        for n, k in enumerate(ktgts)
+    ]
+    return corrected
+
+
+def deseq2norm(x):
+    cols = [c for c in x.columns if ">" in c]
+    return x.div((x / gmean(x)[0]).median(axis=1), axis=0)
+
+
+def main():
+    # Get input arguments
+    args = parse_args()
+    print(
+        f"""
+        Spectrum: {args.spectra}
+        Kmers: {args.kmer}
+        Mode: {args.mode}
+        """
+    )
+
+    if args.distinct:
+        combine_kmer = False
+    else:
+        combine_kmer = True
+    kcounts = get_base_counts(args.kmer, pool=combine_kmer)
+
+    # Perform DeSeq2-like normalization first
+    basename = ".".join(args.spectra.split(".")[0:-1])
+    if args.spectra.endswith("csv"):
+        indf = pd.read_csv(args.spectra, delimiter=",")
+        if indf.shape[1] == 1:
+            indf = pd.read_csv(args.spectra, delimiter=";")
+        if indf.shape[1] == 1:
+            raise Exception("Invalid input!")
+    else:
+        indf = pd.read_csv(args.spectra, delimiter="\t")
+    # Transpose the dataset
+    if "CHANGE" in indf.columns:
+        indf = indf.set_index("CHANGE").T.rename({"CHANGE": "sample"})
+
+    # If input is tsv, save it in the appropriate converted format
+    if "CHANGE" in indf.columns or not args.spectra.endswith("csv"):
+        indf.to_csv(f"{basename}.csv", index=True, sep=";", index_label="sample")
+
+    k_counter= []
+    inv_k_counter= []
+    # Apply DeSeq2 normalization first
+    for colname in [c for c in indf.columns if ">" in c]:
+        k = colname.split(">")[0]
+        if k in kcounts:
+            k_counter.append((k,kcounts.get(k, 0)))
+            indf[[colname]] = indf[[colname]] / kcounts.get(k, 0)
+        elif invert_kmer(k) in kcounts:
+            inv_k_counter.append((k,kcounts.get(invert_kmer(k), 0)))
+            indf[[colname]] = indf[[colname]] / kcounts.get(invert_kmer(k), 0)
+        else:
+            import sys
+
+            print(kcounts)
+            sys.exit("K-mer {} does not exits".format(k))
+    indf.to_csv(f"{basename}.NKnorm.csv", index=False)
+    print(kcounts)
+    print(k_counter)
+    print(inv_k_counter)
+    # Run normalizatio by column
+    indf[[c for c in indf.columns if ">" in c]] = deseq2norm(
+        indf[[c for c in indf.columns if ">" in c]]
+    )
+    indf.to_csv(f"{basename}.NKnorm.deseq2.csv", index=False)
+
+    # # Perform DeSeq2-like normalization first
+    # indf = pd.read_csv(args.spectra, delimiter=';')
+    # for colname in [c for c in indf.columns if ">" in c]:
+    #     k = colname.split('>')[0]
+    #     indf[[colname]] = indf[[colname]] / kcounts.get(k, 0)
+    # indf.to_csv(args.spectra.replace('.csv', '.NKnorm.csv'), index = False)
+
+    if args.mode == 1:
+        outf = open(f"{basename}.NTnorm.csv", "w")
+    else:
+        outf = open(f"{basename}.NTKnorm.csv", "w")
+    for n, line in enumerate(open(args.spectra)):
+        if n == 0:
+            kstats = [
+                kmer.split(">")[0]
+                for m, kmer in enumerate(line.strip().split("\t"))
+                if m > 0
+            ]
+            # print( line.strip() )
+            outf.write(line)
+            continue
+        line = line.strip().split("\t")
+        if len(line) != len(kstats) +1:
+            continue
+        # print(str(len(kstats)) + " - " + str(kstats))
+        # print(str(len(line)) + " - " + str(line))
+        outline = map(
+            str, [line[0]] + correct_values(line[1:], kstats, kcounts, args.mode)
+        )
+        outf.write("\t".join(outline) + "\n")
+
+
+if __name__ == "__main__":
+    main()
