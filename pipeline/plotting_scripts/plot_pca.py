@@ -3,38 +3,63 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import colorcet as cc
 from matplotlib.patches import Ellipse
+import os
+
+outdir = "/mnt/autofs/data/userdata/project0076/annalise/filtering/pipeline/results/plots"
 
 
 #------------- Loading Files------------------#
 
 # --------------------- Full cohort-----------------#
-#-------------Read eigenvectors (PCA coordinates) ---------------#
+
 FULL_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_1/before_filter_pca.eigenvec", sep=r"\s+")
 FULL_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_1/before_filter_pca.eigenval", header=None)
-#loading metadata, includes information on Breed and Group
-FULL_metadata = pd.read_csv("/mnt/autofs/data/userdata/project0076/annalise/filtering/plink_files_pca/metadata2.csv")
-#---------------- Domestic Only Cohort ---------------------#
-DOM_COHORT = pd.read_csv("/mnt/autofs/data/userdata/project0076/annalise/filtering/test4_norm/test4_bcftools_filter/final/dom/dom_only_final.eigenvec", sep=r"\s+")
-DOM_EIGENVAL = pd.read_csv("/mnt/autofs/data/userdata/project0076/annalise/filtering/test4_norm/test4_bcftools_filter/final/dom/dom_only_final.eigenval", header=None)
-DOM_metadata = pd.read_csv("/mnt/autofs/data/userdata/project0076/annalise/filtering/plink_files_pca/metadata_domestic_grouped.csv")
+#loading metadata, includes information on Breed and Group, cleaning
+FULL_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/plotting_scripts/metadata2.csv")
 
+FULL_COHORT = FULL_COHORT.drop_duplicates(subset="IID", keep="first")
+FULL_metadata = FULL_metadata.drop_duplicates(subset="IID", keep="first")
+
+# -------------- Full cohort Post Filter --------------------#
+
+FILTER_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/filtered_pca.eigenvec", sep=r"\s+")
+FILTER_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/filtered_pca.eigenval", header=None)
+FILTER_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/plotting_scripts/metadata2.csv")
+
+FILTER_COHORT = FILTER_COHORT.drop_duplicates(subset="IID", keep="first")
+FILTER_metadata = FILTER_metadata.drop_duplicates(subset="IID", keep="first")
+
+#---------------- Domestic Only Cohort ---------------------#
+
+DOM_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/dom_only/dom_only.eigenvec", sep=r"\s+")
+DOM_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/dom_only/dom_only.eigenval", header=None)
+DOM_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/plotting_scripts/metadata_domestic_grouped.csv")
+
+DOM_COHORT = DOM_COHORT.drop_duplicates(subset="IID", keep="first")
+DOM_metadata = DOM_metadata.drop_duplicates(subset="IID", keep="first")
+
+######-------REMOVING TURKISH ANGORA and TOYGER CAUSE THEY ARE STILL OUTLIERS------##########
+exclude_iid = ["SAMN14425597", "SAMN14425596"]
+
+DOM_COHORT = DOM_COHORT[~DOM_COHORT["IID"].isin(exclude_iid)]
 
 #-----------------Wild Only Cohort ---------------------#
 
-WILD_COHORT = pd.read_csv("/mnt/autofs/data/userdata/project0076/annalise/filtering/test4_norm/test4_bcftools_filter/final/wild/wild_only_final.eigenvec", sep=r"\s+", header=0)
-WILD_EIGEN = pd.read_csv("/mnt/autofs/data/userdata/project0076/annalise/filtering/test4_norm/test4_bcftools_filter/final/wild/wild_only_final.eigenval", header=None)
-WILD_metadata = pd.read_csv("/mnt/autofs/data/userdata/project0076/annalise/filtering/plink_files_pca/metadata_wild.csv")
-#-----------------PROCESSING PCAS --------------------#
+WILD_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/wild_only/wild_only.eigenvec", sep=r"\s+", header=0)
+WILD_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/wild_only/wild_only.eigenval", header=None)
+WILD_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/plotting_scripts/metadata_wild.csv")
+
+WILD_COHORT = WILD_COHORT.drop_duplicates(subset="IID", keep="first")
+WILD_metadata = WILD_metadata.drop_duplicates(subset="IID", keep="first")
 
 
-# ----- Full Cohort PCA --------#
+#-------------Full Cohort----------#
 variance_explained = FULL_EIGENVAL[0] / FULL_EIGENVAL[0].sum() * 100
 
 pc1_variance = variance_explained.iloc[0]
 pc2_variance = variance_explained.iloc[1]
 
-#merge metadata and pca coordinates into one data frame
-FULL_COHORT=FULL_COHORT.merge(FULL_metadata, on="IID", how="left")
+FULL_COHORT=FULL_COHORT.merge(FULL_metadata, on="IID", how="left", validate="one_to_one")
 
 sns.set_theme(style="white", context="paper", font_scale=1.3)
 
@@ -60,7 +85,7 @@ plt.xlabel(
     f"PC1 ({pc1_variance:.2f}%)", fontsize=14)
 plt.ylabel(
     f"PC2 ({pc2_variance:.2f}%)", fontsize=14)
-plt.title("Full Cohort - Pre Filter", fontsize=16, weight="bold")
+plt.title("PCA - Pre-Filter", fontsize=16, weight="bold")
 
 plt.legend(
     title= "Group",
@@ -73,12 +98,20 @@ plt.legend(
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Full Cohort PCA_1_2", dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Before_filter_1_2"), dpi=600, bbox_inches="tight")
+plt.close()
 
 #--------- PC3 and 4 -------------------#
-
 pc3_variance = variance_explained.iloc[2]
 pc4_variance = variance_explained.iloc[3]
+
+sns.set_theme(style="white", context="paper", font_scale=1.3)
+
+plt.figure(figsize=(8, 7))
+
+groups = FULL_COHORT["Group"].unique()
+
+palette = sns.color_palette("hls", len(groups))
 
 sns.scatterplot(
     data=FULL_COHORT,
@@ -96,7 +129,7 @@ plt.xlabel(
     f"PC3 ({pc3_variance:.2f}%)", fontsize=14)
 plt.ylabel(
     f"PC4 ({pc4_variance:.2f}%)", fontsize=14)
-plt.title("Full Cohort - Pre Filter", fontsize=16, weight="bold")
+plt.title("PCA - Pre-Filter", fontsize=16, weight="bold")
 
 plt.legend(
     title= "Group",
@@ -109,18 +142,113 @@ plt.legend(
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Full Cohort PCA_3_4", dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Before_filter_3_4"), dpi=600, bbox_inches="tight")
+plt.close()
 
-#--------------------Domestic Only Set-------------------#
 
+#------------------- Full cohort Post Filter-----------------------#
 
-# variance calcs
-variance_explained = DOM_EIGENVAL[0] / DOM_EIGENVAL[0].sum() * 100
+variance_explained = FILTER_EIGENVAL[0] / FILTER_EIGENVAL[0].sum() * 100
 
 pc1_variance = variance_explained.iloc[0]
 pc2_variance = variance_explained.iloc[1]
 
-#loading metadata, includes information on Breed and Group
+FILTER_COHORT=FILTER_COHORT.merge(FILTER_metadata, on="IID", how="left", validate="one_to_one")
+
+sns.set_theme(style="white", context="paper", font_scale=1.3)
+
+plt.figure(figsize=(8, 7))
+
+groups = FILTER_COHORT["Group"].unique()
+
+palette = sns.color_palette("hls", len(groups))
+
+sns.scatterplot(
+    data=FILTER_COHORT,
+    x="PC1",
+    y="PC2",
+    hue="Group",
+    palette=palette,
+    s=35,
+    alpha=0.8,
+    linewidth=0.2,
+    edgecolor="black"
+    )
+
+plt.xlabel(
+    f"PC1 ({pc1_variance:.2f}%)", fontsize=14)
+plt.ylabel(
+    f"PC2 ({pc2_variance:.2f}%)", fontsize=14)
+plt.title("PCA - Post-Filter", fontsize=16, weight="bold")
+
+plt.legend(
+    title= "Group",
+    bbox_to_anchor=(1.02, 1),
+    loc="upper left",
+    frameon=True,
+    fontsize=9,
+    title_fontsize=10,
+)
+
+sns.despine()
+plt.tight_layout()
+plt.savefig(os.path.join(outdir, "Post_filter_1_2"), dpi=600, bbox_inches="tight")
+plt.close()
+
+#--------- PC3 and 4 -------------------#
+
+variance_explained = FILTER_EIGENVAL[0] / FILTER_EIGENVAL[0].sum() * 100
+
+pc3_variance = variance_explained.iloc[2]
+pc4_variance = variance_explained.iloc[3]
+
+sns.set_theme(style="white", context="paper", font_scale=1.3)
+
+plt.figure(figsize=(8, 7))
+
+groups = FILTER_COHORT["Group"].unique()
+
+palette = sns.color_palette("hls", len(groups))
+
+sns.scatterplot(
+    data=FILTER_COHORT,
+    x="PC3",
+    y="PC4",
+    hue="Group",
+    palette=palette,
+    s=35,
+    alpha=0.8,
+    linewidth=0.2,
+    edgecolor="black"
+    )
+
+plt.xlabel(
+    f"PC3 ({pc3_variance:.2f}%)", fontsize=14)
+plt.ylabel(
+    f"PC4 ({pc4_variance:.2f}%)", fontsize=14)
+plt.title("PCA - Post-Filter", fontsize=16, weight="bold")
+
+plt.legend(
+    title= "Group",
+    bbox_to_anchor=(1.02, 1),
+    loc="upper left",
+    frameon=True,
+    fontsize=9,
+    title_fontsize=10,
+)
+
+sns.despine()
+plt.tight_layout()
+plt.savefig(os.path.join(outdir,"Post_filter_3_4"), dpi=600, bbox_inches="tight")
+plt.close()
+
+
+#--------------------Domestic Only Set-------------------#
+
+variance_explained = DOM_EIGENVAL[0] / DOM_EIGENVAL[0].sum() * 100
+
+pc1_variance = variance_explained.iloc[0]
+pc2_variance = variance_explained.iloc[1]
 
 
 DOM_COHORT.columns = [
@@ -130,7 +258,7 @@ DOM_COHORT.columns = [
 ]
 
 #merge metadata and pca coordinates into one data frame
-DOM_COHORT=DOM_COHORT.merge(DOM_metadata, on="IID", how="left")
+DOM_COHORT = DOM_COHORT.merge(DOM_metadata, on="IID", how="left", validate= "one_to_one")
 
 sns.set_theme(style="white", context="paper", font_scale=1.3)
 
@@ -179,12 +307,27 @@ plt.legend(
 sns.despine()
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.25)
-plt.savefig("Dom_Only_PCA_1_2.png", dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Dom_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
 
+plt.close()
 
-#--------------------Domestic Only Set PC3 and 4-------------------#
+#--------------------Domestic Only Set PC3 and 4------------------
+
+variance_explained = DOM_EIGENVAL[0] / DOM_EIGENVAL[0].sum() * 100
+
 pc3_variance = variance_explained.iloc[2]
 pc4_variance = variance_explained.iloc[3]
+
+#merge metadata and pca coordinates into one data frame
+
+sns.set_theme(style="white", context="paper", font_scale=1.3)
+
+plt.figure(figsize=(10, 8))
+
+breeds = DOM_COHORT["Breed"].unique()
+
+palette = cc.glasbey_bw_minc_20_maxl_70[:DOM_COHORT["Breed"].nunique()]
+breed_palette = dict(zip(breeds, palette))
 
 sns.scatterplot(
     data=DOM_COHORT,
@@ -224,11 +367,12 @@ plt.legend(
 sns.despine()
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.25)
-plt.savefig("Dom_Only_PCA_3_4.png", dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Dom_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
 
+plt.close()
 #--------------------Wild Only Set-------------------#
 
-variance_explained = WILD_EIGEN[0] / WILD_EIGEN[0].sum() * 100
+variance_explained = WILD_EIGENVAL[0] / WILD_EIGENVAL[0].sum() * 100
 
 pc1_variance = variance_explained.iloc[0]
 pc2_variance = variance_explained.iloc[1]
@@ -239,12 +383,15 @@ WILD_COHORT.columns = [
     "PC6", "PC7", "PC8", "PC9", "PC10"
 ]
 
-
 WILD_COHORT["IID"] = WILD_COHORT["IID"].astype(str).str.strip()
 WILD_metadata["IID"] = WILD_metadata["IID"].astype(str).str.strip()
 
 #merge metadata and pca coordinates into one data frame
-WILD_COHORT=WILD_COHORT.merge(WILD_metadata, on="IID", how="left")
+WILD_COHORT=WILD_COHORT.merge(WILD_metadata, on="IID", how="left", validate="one_to_one")
+
+sns.set_theme(style="white", context="paper", font_scale=1.3)
+
+plt.figure(figsize=(8, 7))
 
 breeds = WILD_COHORT["Breed"].unique()
 
@@ -281,13 +428,16 @@ plt.legend(
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Wild_Only_PCA_1_2.png", dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Wild_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
 
-
+plt.close()
 #--------------------Wild Only Set PCs 3-4 -------------------#
+variance_explained = WILD_EIGENVAL[0] / WILD_EIGENVAL[0].sum() * 100
 
 pc3_variance = variance_explained.iloc[2]
 pc4_variance = variance_explained.iloc[3]
+
+plt.figure(figsize=(8, 7))
 
 sns.scatterplot(
     data=WILD_COHORT,
@@ -320,10 +470,10 @@ plt.legend(
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Wild_Only_PCA_3_4.png", dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Wild_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
 
 
-
+plt.close()
 # #------------------------- Breed split plots ------- #
 
 # #Read eigenvectors (PCA coordinates)
