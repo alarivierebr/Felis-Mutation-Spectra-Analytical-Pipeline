@@ -4,6 +4,8 @@ import seaborn as sns
 import colorcet as cc
 from matplotlib.patches import Ellipse
 import os
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
+from matplotlib.patches import Rectangle
 
 outdir = "/mnt/autofs/data/userdata/project0076/annalise/filtering/pipeline/results/plots"
 
@@ -20,33 +22,39 @@ FULL_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/p
 FULL_COHORT = FULL_COHORT.drop_duplicates(subset="IID", keep="first")
 FULL_metadata = FULL_metadata.drop_duplicates(subset="IID", keep="first")
 
+#----- Filtering out Savannah -----#
+# exclude_iid = ["SAMN14425583"]
+
+# FULL_COHORT = FULL_COHORT[~FULL_COHORT["IID"].isin(exclude_iid)]
+
 # -------------- Full cohort Post Filter --------------------#
 
-FILTER_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/filtered_pca.eigenvec", sep=r"\s+")
-FILTER_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/filtered_pca.eigenval", header=None)
+FILTER_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_nO/nO_filtered_pca.eigenvec", sep=r"\s+")
+FILTER_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_nO/nO_filtered_pca.eigenval", header=None)
 FILTER_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/plotting_scripts/metadata2.csv")
 
 FILTER_COHORT = FILTER_COHORT.drop_duplicates(subset="IID", keep="first")
 FILTER_metadata = FILTER_metadata.drop_duplicates(subset="IID", keep="first")
 
+
 #---------------- Domestic Only Cohort ---------------------#
 
-DOM_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/dom_only/dom_only.eigenvec", sep=r"\s+")
-DOM_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/dom_only/dom_only.eigenval", header=None)
+DOM_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/dom_only/nO_dom_only.eigenvec", sep=r"\s+")
+DOM_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/dom_only/nO_dom_only.eigenval", header=None)
 DOM_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/plotting_scripts/metadata_domestic_grouped.csv")
 
 DOM_COHORT = DOM_COHORT.drop_duplicates(subset="IID", keep="first")
 DOM_metadata = DOM_metadata.drop_duplicates(subset="IID", keep="first")
 
-######-------REMOVING TURKISH ANGORA and TOYGER CAUSE THEY ARE STILL OUTLIERS------##########
-exclude_iid = ["SAMN14425597", "SAMN14425596"]
+# ####-------REMOVING TURKISH ANGORA and TOYGER CAUSE THEY ARE STILL OUTLIERS------##########
+# exclude_iid = ["SAMN14425597", "SAMN14425596", "SAMN04022998", "SAMN05980314", "SRS9467141"]
 
-DOM_COHORT = DOM_COHORT[~DOM_COHORT["IID"].isin(exclude_iid)]
+# DOM_COHORT = DOM_COHORT[~DOM_COHORT["IID"].isin(exclude_iid)]
 
 #-----------------Wild Only Cohort ---------------------#
 
-WILD_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/wild_only/wild_only.eigenvec", sep=r"\s+", header=0)
-WILD_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/wild_only/wild_only.eigenval", header=None)
+WILD_COHORT = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/wild_only/nO_wild_only.eigenvec", sep=r"\s+", header=0)
+WILD_EIGENVAL = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/results/plink_filtered/wild_only/nO_wild_only.eigenval", header=None)
 WILD_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/plotting_scripts/metadata_wild.csv")
 
 WILD_COHORT = WILD_COHORT.drop_duplicates(subset="IID", keep="first")
@@ -59,33 +67,43 @@ variance_explained = FULL_EIGENVAL[0] / FULL_EIGENVAL[0].sum() * 100
 pc1_variance = variance_explained.iloc[0]
 pc2_variance = variance_explained.iloc[1]
 
+
 FULL_COHORT=FULL_COHORT.merge(FULL_metadata, on="IID", how="left", validate="one_to_one")
 
 sns.set_theme(style="white", context="paper", font_scale=1.3)
 
-plt.figure(figsize=(8, 7))
+fig, ax = plt.subplots(figsize=(8, 7))
 
 groups = FULL_COHORT["Group"].unique()
 
-palette = sns.color_palette("hls", len(groups))
+other_group = [g for g in groups if g != "Domestic"]
+
+other_palette = sns.color_palette("nipy_spectral", len(other_group))
+
+group_palette = {"Domestic": "grey"}
+group_palette.update(dict(zip(other_group, other_palette))
+)
+
 
 sns.scatterplot(
     data=FULL_COHORT,
     x="PC1",
     y="PC2",
     hue="Group",
-    palette=palette,
+    palette=group_palette,
     s=35,
     alpha=0.8,
     linewidth=0.2,
     edgecolor="black"
     )
 
+
+
 plt.xlabel(
     f"PC1 ({pc1_variance:.2f}%)", fontsize=14)
 plt.ylabel(
     f"PC2 ({pc2_variance:.2f}%)", fontsize=14)
-plt.title("PCA - Pre-Filter", fontsize=16, weight="bold")
+plt.title("PCA - Full Cohort, Pre-Filter", fontsize=16, weight="bold")
 
 plt.legend(
     title= "Group",
@@ -95,6 +113,53 @@ plt.legend(
     fontsize=9,
     title_fontsize=10,
 )
+x_min = -0.027
+x_max = -0.010
+
+y_min = -0.01
+y_max = 0.010
+
+
+axins = inset_axes(
+    ax,
+    width="40%",
+    height="40%",
+    loc="upper center"
+)
+
+sns.scatterplot(
+    data=FULL_COHORT,
+    x="PC1",
+    y="PC2",
+    hue="Group",
+    palette=group_palette,
+    s=35,
+    alpha=0.8,
+    linewidth=0.2,
+    edgecolor="black",
+    legend=False
+    )
+
+
+axins.set_xlim(x_min, x_max)
+axins.set_ylim(y_min, y_max)
+
+axins.set_xlabel("PC1", fontsize=9)
+axins.set_ylabel("PC2", fontsize=9)
+axins.tick_params(axis="both",labelsize=6)
+
+mark_inset(
+    ax,
+    axins,
+    loc1=2,
+    loc2=4,
+    fc="none",
+    ec="black",
+    linewidth=1
+)
+
+plt.tight_layout()
+
 
 sns.despine()
 plt.tight_layout()
@@ -109,16 +174,12 @@ sns.set_theme(style="white", context="paper", font_scale=1.3)
 
 plt.figure(figsize=(8, 7))
 
-groups = FULL_COHORT["Group"].unique()
-
-palette = sns.color_palette("hls", len(groups))
-
 sns.scatterplot(
     data=FULL_COHORT,
     x="PC3",
     y="PC4",
     hue="Group",
-    palette=palette,
+    palette=group_palette,
     s=35,
     alpha=0.8,
     linewidth=0.2,
@@ -129,7 +190,7 @@ plt.xlabel(
     f"PC3 ({pc3_variance:.2f}%)", fontsize=14)
 plt.ylabel(
     f"PC4 ({pc4_variance:.2f}%)", fontsize=14)
-plt.title("PCA - Pre-Filter", fontsize=16, weight="bold")
+plt.title("PCA - Full Cohort, Pre-Filter", fontsize=16, weight="bold")
 
 plt.legend(
     title= "Group",
@@ -161,14 +222,21 @@ plt.figure(figsize=(8, 7))
 
 groups = FILTER_COHORT["Group"].unique()
 
-palette = sns.color_palette("hls", len(groups))
+other_group = [g for g in groups if g != "Domestic"]
+
+other_palette = sns.color_palette("nipy_spectral", len(other_group))
+
+group_palette = {"Domestic": "grey"}
+group_palette.update(dict(zip(other_group, other_palette))
+)
+
 
 sns.scatterplot(
     data=FILTER_COHORT,
     x="PC1",
     y="PC2",
     hue="Group",
-    palette=palette,
+    palette=group_palette,
     s=35,
     alpha=0.8,
     linewidth=0.2,
@@ -179,7 +247,7 @@ plt.xlabel(
     f"PC1 ({pc1_variance:.2f}%)", fontsize=14)
 plt.ylabel(
     f"PC2 ({pc2_variance:.2f}%)", fontsize=14)
-plt.title("PCA - Post-Filter", fontsize=16, weight="bold")
+plt.title("PCA - Filtered Cohort", fontsize=16, weight="bold")
 
 plt.legend(
     title= "Group",
@@ -192,7 +260,7 @@ plt.legend(
 
 sns.despine()
 plt.tight_layout()
-plt.savefig(os.path.join(outdir, "Post_filter_1_2"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir, "After_filter_1_2"), dpi=600, bbox_inches="tight")
 plt.close()
 
 #--------- PC3 and 4 -------------------#
@@ -208,14 +276,13 @@ plt.figure(figsize=(8, 7))
 
 groups = FILTER_COHORT["Group"].unique()
 
-palette = sns.color_palette("hls", len(groups))
 
 sns.scatterplot(
     data=FILTER_COHORT,
     x="PC3",
     y="PC4",
     hue="Group",
-    palette=palette,
+    palette=group_palette,
     s=35,
     alpha=0.8,
     linewidth=0.2,
@@ -226,7 +293,7 @@ plt.xlabel(
     f"PC3 ({pc3_variance:.2f}%)", fontsize=14)
 plt.ylabel(
     f"PC4 ({pc4_variance:.2f}%)", fontsize=14)
-plt.title("PCA - Post-Filter", fontsize=16, weight="bold")
+plt.title("PCA - Filtered Cohort", fontsize=16, weight="bold")
 
 plt.legend(
     title= "Group",
@@ -239,7 +306,7 @@ plt.legend(
 
 sns.despine()
 plt.tight_layout()
-plt.savefig(os.path.join(outdir,"Post_filter_3_4"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"After_filter_3_4"), dpi=600, bbox_inches="tight")
 plt.close()
 
 
@@ -262,13 +329,15 @@ DOM_COHORT = DOM_COHORT.merge(DOM_metadata, on="IID", how="left", validate= "one
 
 sns.set_theme(style="white", context="paper", font_scale=1.3)
 
-plt.figure(figsize=(10, 8))
+fig, ax = plt.subplots(figsize=(10, 8))
 
 breeds = DOM_COHORT["Breed"].unique()
 
 palette = cc.glasbey_bw_minc_20_maxl_70[:DOM_COHORT["Breed"].nunique()]
 breed_palette = dict(zip(breeds, palette))
 
+
+#-------- Main plot-----#
 sns.scatterplot(
     data=DOM_COHORT,
     x="PC1",
@@ -292,6 +361,7 @@ plt.title("Domestic Cohort PCA, maf = 0.05, genotype = 0.1", fontsize=16, weight
 handles, labels = plt.gca().get_legend_handles_labels()
 order = sorted(zip(labels, handles), key = lambda x: x[0])
 
+
 plt.legend(
     [h for l, h in order],
     [l for l, h in order],
@@ -304,10 +374,60 @@ plt.legend(
     title_fontsize=10,
 )
 
+#------ Inset--------#
+x_min = -0.04
+x_max = -0.01
+
+y_min = -0.050
+y_max = 0.03
+
+
+axins = inset_axes(
+    ax,
+    width="40%",
+    height="40%",
+    loc="upper right"
+)
+
+sns.scatterplot(
+    data=DOM_COHORT,
+    x="PC1",
+    y="PC2",
+    hue="Breed",
+    palette=breed_palette,
+    s=30,
+    alpha=0.8,
+    linewidth=0.5,
+    edgecolor="black",
+    legend=False,
+    ax=axins
+    )
+
+
+axins.set_xlim(x_min, x_max)
+axins.set_ylim(y_min, y_max)
+
+axins.set_xlabel("PC1", fontsize=9)
+axins.set_ylabel("PC2", fontsize=9)
+axins.tick_params(axis="both",labelsize=8)
+
+mark_inset(
+    ax,
+    axins,
+    loc1=2,
+    loc2=4,
+    fc="none",
+    ec="black",
+    linewidth=1
+)
+
+plt.tight_layout()
+
+
 sns.despine()
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.25)
-plt.savefig(os.path.join(outdir,"Dom_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"nO_Dom_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
 
 plt.close()
 
@@ -367,7 +487,7 @@ plt.legend(
 sns.despine()
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.25)
-plt.savefig(os.path.join(outdir,"Dom_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"nO_Dom_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
 
 plt.close()
 #--------------------Wild Only Set-------------------#
@@ -391,11 +511,11 @@ WILD_COHORT=WILD_COHORT.merge(WILD_metadata, on="IID", how="left", validate="one
 
 sns.set_theme(style="white", context="paper", font_scale=1.3)
 
-plt.figure(figsize=(8, 7))
+fig, ax = plt.subplots(figsize=(8, 7))
 
 breeds = WILD_COHORT["Breed"].unique()
 
-palette = sns.color_palette("hls", len(breeds))
+palette = sns.color_palette("gnuplot2", len(breeds))
 
 sns.scatterplot(
     data=WILD_COHORT,
@@ -426,9 +546,56 @@ plt.legend(
     title_fontsize=10,
 )
 
+x_min = -0.035
+x_max = -0.005
+
+y_min = -0.055
+y_max = -0.025
+
+
+axins = inset_axes(
+    ax,
+    width="40%",
+    height="40%",
+    loc="upper right"
+)
+
+sns.scatterplot(
+    data=WILD_COHORT,
+    x="PC1",
+    y="PC2",
+    hue="Breed",
+    palette=palette,
+    s=35,
+    alpha=0.8,
+    linewidth=0.2,
+    edgecolor="black",
+    legend=False
+    )
+
+
+axins.set_xlim(x_min, x_max)
+axins.set_ylim(y_min, y_max)
+
+axins.set_xlabel("PC1", fontsize=9)
+axins.set_ylabel("PC2", fontsize=9)
+axins.tick_params(axis="both",labelsize=6)
+
+mark_inset(
+    ax,
+    axins,
+    loc1=2,
+    loc2=4,
+    fc="none",
+    ec="black",
+    linewidth=1
+)
+
+plt.tight_layout()
+
 sns.despine()
 plt.tight_layout()
-plt.savefig(os.path.join(outdir,"Wild_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"nO_Wild_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
 
 plt.close()
 #--------------------Wild Only Set PCs 3-4 -------------------#
@@ -470,7 +637,7 @@ plt.legend(
 
 sns.despine()
 plt.tight_layout()
-plt.savefig(os.path.join(outdir,"Wild_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"nO_Wild_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
 
 
 plt.close()
