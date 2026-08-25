@@ -1,6 +1,5 @@
-Updating the files in here and cleaning it up now! Please wait to read until I'm finished!
+Updating the files in here and cleaning it up now! Please wait until August 26th to read through so I can make it tidier! Thank you!
 
-Information about this code will go here!
 
 
 # Configuration
