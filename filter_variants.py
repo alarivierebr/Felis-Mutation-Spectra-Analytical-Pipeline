@@ -36,13 +36,13 @@ AB_HIGH_BOUND_HET = 0.8
 
 AB_HIGH_BOUND_HOMO = 0.02
 
-DEPTH_LOW_BOUND = 6  #Do I want to use 6 or 10 here? Using 6 from tailored variant filtering procedure paper, less strict than DP <= 10 from
+DEPTH_LOW_BOUND = 6 
 GENOTYPE_QUAL_LOW_BOUND = 20
 CALLRATE_LOW_BOUND = 0.9
 
 
 '''
-Setting up constants for filtering specifications per paper
+Setting up constants for filtering specifications Pedersen et al., 2021 and Lazzari et al., 2025
 
 High genotype quality for all samples in a family
 GQ ≥ 20 
@@ -54,7 +54,7 @@ Allele balance <0.02 homozygous samples
 AB < 0.02
 
 Depth of at least 10 for all samples in a family in whole-genome data
-DP ≥ 10 (whole-genome only)
+DP ≥ 6 (whole-genome only) from Lazzari et al
 
 
 
@@ -80,7 +80,7 @@ def biallelic_check(record: pysam.VariantRecord) -> bool:
     return record.alts is None or len(record.alts) == 1
 #---------------------------
 
-#Since this version of the filter is meant to be used after bcftools -m -any, I 
+#check for SNP records
 def allele_variant_type_check(record: pysam.VariantRecord) -> bool:
 
     return len(record.alleles_variant_types) < 2 or record.alleles_variant_types[1] == "SNP"
