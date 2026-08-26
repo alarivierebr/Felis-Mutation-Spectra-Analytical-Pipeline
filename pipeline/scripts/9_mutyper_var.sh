@@ -9,15 +9,15 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 
-#SBATCH --output=/mnt/autofs/data/userdata/project0076/annalise/pipeline/results/logs/%j.out
-#SBATCH --error=/mnt/autofs/data/userdata/project0076/annalise/pipeline/results/logs/%j.err
+#SBATCH --output=/mnt/autofs/data/userdata/project0076/annalise/filtering/pipeline/logs/10-var-%j.out
+#SBATCH --error=/mnt/autofs/data/userdata/project0076/annalise/filtering/pipeline/logs/10-var-%j.err
 
 #SBATCH --mail-user=3175404l@student.gla.ac.uk
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 set -euo pipefail
 
-source /mnt/autofs/data/userdata/project0076/annalise/pipeline/project_config.sh
+source /mnt/autofs/data/userdata/project0076/annalise/filtering/pipeline/project_config.sh
 
 
 [[ -f "${ANNOTATED_VCF}" ]] || {
