@@ -22,6 +22,9 @@ set -euo pipefail
 
 #Runs every step in the pipeline aside from 1_glnexus.sh and 2_glnexus_concat.sh. Run 1 and 2 manually and then run this script at Step 3!
 
+job10=$(sbatch "${SCRIPTS_DIR}/2_plink_unfiltered.sh" | awk '{print $4}')
+echo "Submitted 2_plink_unfiltered.sh: ${job10}"
+
 job1=$(sbatch "${SCRIPTS_DIR}/3_multi_split.sh" | awk '{print $4}')
 echo "Submitted 3_multi_split.sh: ${job1}"
 
@@ -49,3 +52,5 @@ echo "Submitted 9_mutyper_var.sh: ${job8}"
 job9=$(sbatch --dependency=afterok:${job8} "${SCRIPTS_DIR}/10_mutyper_spec.sh" | awk '{print $4}')
 echo "Submitted 10_mutyper_spec.sh: ${job9}"
 
+job9=$(sbatch --dependency=afterok:${job9} "${SCRIPTS_DIR}/11_get_counts.sh" | awk '{print $4}')
+echo "Submitted 11_get_counts.sh: ${job10}"
