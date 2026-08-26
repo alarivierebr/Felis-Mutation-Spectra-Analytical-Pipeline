@@ -3,8 +3,7 @@
 #-------------
 # Goals:
 # 1. Input multiqc informartion csv and clean it up
-# 2. Output barplot of statistics
-# 3. Output or print summary statistics
+# 2. Output or print summary statistics
 
 # ------ Package install ------#
 
