@@ -22,10 +22,6 @@ FULL_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/p
 FULL_COHORT = FULL_COHORT.drop_duplicates(subset="IID", keep="first")
 FULL_metadata = FULL_metadata.drop_duplicates(subset="IID", keep="first")
 
-#----- Filtering out Savannah -----#
-# exclude_iid = ["SAMN14425583"]
-
-# FULL_COHORT = FULL_COHORT[~FULL_COHORT["IID"].isin(exclude_iid)]
 
 # -------------- Full cohort Post Filter --------------------#
 
@@ -46,10 +42,7 @@ DOM_metadata = pd.read_csv("/mnt/data/project0076/annalise/filtering/pipeline/pl
 DOM_COHORT = DOM_COHORT.drop_duplicates(subset="IID", keep="first")
 DOM_metadata = DOM_metadata.drop_duplicates(subset="IID", keep="first")
 
-# ####-------REMOVING TURKISH ANGORA and TOYGER CAUSE THEY ARE STILL OUTLIERS------##########
-# exclude_iid = ["SAMN14425597", "SAMN14425596", "SAMN04022998", "SAMN05980314", "SRS9467141"]
 
-# DOM_COHORT = DOM_COHORT[~DOM_COHORT["IID"].isin(exclude_iid)]
 
 #-----------------Wild Only Cohort ---------------------#
 
@@ -113,52 +106,52 @@ plt.legend(
     fontsize=9,
     title_fontsize=10,
 )
-x_min = -0.027
-x_max = -0.010
+# x_min = -0.027
+# x_max = -0.010
 
-y_min = -0.01
-y_max = 0.010
-
-
-axins = inset_axes(
-    ax,
-    width="40%",
-    height="40%",
-    loc="upper center"
-)
-
-sns.scatterplot(
-    data=FULL_COHORT,
-    x="PC1",
-    y="PC2",
-    hue="Group",
-    palette=group_palette,
-    s=35,
-    alpha=0.8,
-    linewidth=0.2,
-    edgecolor="black",
-    legend=False
-    )
+# y_min = -0.01
+# y_max = 0.010
 
 
-axins.set_xlim(x_min, x_max)
-axins.set_ylim(y_min, y_max)
+# axins = inset_axes(
+#     ax,
+#     width="40%",
+#     height="40%",
+#     loc="upper center"
+# )
 
-axins.set_xlabel("PC1", fontsize=9)
-axins.set_ylabel("PC2", fontsize=9)
-axins.tick_params(axis="both",labelsize=6)
+# sns.scatterplot(
+#     data=FULL_COHORT,
+#     x="PC1",
+#     y="PC2",
+#     hue="Group",
+#     palette=group_palette,
+#     s=35,
+#     alpha=0.8,
+#     linewidth=0.2,
+#     edgecolor="black",
+#     legend=False
+#     )
 
-mark_inset(
-    ax,
-    axins,
-    loc1=2,
-    loc2=4,
-    fc="none",
-    ec="black",
-    linewidth=1
-)
 
-plt.tight_layout()
+# axins.set_xlim(x_min, x_max)
+# axins.set_ylim(y_min, y_max)
+
+# axins.set_xlabel("PC1", fontsize=9)
+# axins.set_ylabel("PC2", fontsize=9)
+# axins.tick_params(axis="both",labelsize=6)
+
+# mark_inset(
+#     ax,
+#     axins,
+#     loc1=2,
+#     loc2=4,
+#     fc="none",
+#     ec="black",
+#     linewidth=1
+# )
+
+# plt.tight_layout()
 
 
 sns.despine()
@@ -374,60 +367,60 @@ plt.legend(
     title_fontsize=10,
 )
 
-#------ Inset--------#
-x_min = -0.04
-x_max = -0.01
+# #------ Inset--------#
+# x_min = -0.04
+# x_max = -0.01
 
-y_min = -0.050
-y_max = 0.03
-
-
-axins = inset_axes(
-    ax,
-    width="40%",
-    height="40%",
-    loc="upper right"
-)
-
-sns.scatterplot(
-    data=DOM_COHORT,
-    x="PC1",
-    y="PC2",
-    hue="Breed",
-    palette=breed_palette,
-    s=30,
-    alpha=0.8,
-    linewidth=0.5,
-    edgecolor="black",
-    legend=False,
-    ax=axins
-    )
+# y_min = -0.050
+# y_max = 0.03
 
 
-axins.set_xlim(x_min, x_max)
-axins.set_ylim(y_min, y_max)
+# axins = inset_axes(
+#     ax,
+#     width="40%",
+#     height="40%",
+#     loc="upper right"
+# )
 
-axins.set_xlabel("PC1", fontsize=9)
-axins.set_ylabel("PC2", fontsize=9)
-axins.tick_params(axis="both",labelsize=8)
+# sns.scatterplot(
+#     data=DOM_COHORT,
+#     x="PC1",
+#     y="PC2",
+#     hue="Breed",
+#     palette=breed_palette,
+#     s=30,
+#     alpha=0.8,
+#     linewidth=0.5,
+#     edgecolor="black",
+#     legend=False,
+#     ax=axins
+#     )
 
-mark_inset(
-    ax,
-    axins,
-    loc1=2,
-    loc2=4,
-    fc="none",
-    ec="black",
-    linewidth=1
-)
 
-plt.tight_layout()
+# axins.set_xlim(x_min, x_max)
+# axins.set_ylim(y_min, y_max)
+
+# axins.set_xlabel("PC1", fontsize=9)
+# axins.set_ylabel("PC2", fontsize=9)
+# axins.tick_params(axis="both",labelsize=8)
+
+# mark_inset(
+#     ax,
+#     axins,
+#     loc1=2,
+#     loc2=4,
+#     fc="none",
+#     ec="black",
+#     linewidth=1
+# )
+
+# plt.tight_layout()
 
 
 sns.despine()
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.25)
-plt.savefig(os.path.join(outdir,"nO_Dom_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Dom_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
 
 plt.close()
 
@@ -487,7 +480,7 @@ plt.legend(
 sns.despine()
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.25)
-plt.savefig(os.path.join(outdir,"nO_Dom_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Dom_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
 
 plt.close()
 #--------------------Wild Only Set-------------------#
@@ -546,56 +539,56 @@ plt.legend(
     title_fontsize=10,
 )
 
-x_min = -0.035
-x_max = -0.005
+# x_min = -0.07
+# x_max = -0.03
 
-y_min = -0.055
-y_max = -0.025
-
-
-axins = inset_axes(
-    ax,
-    width="40%",
-    height="40%",
-    loc="upper right"
-)
-
-sns.scatterplot(
-    data=WILD_COHORT,
-    x="PC1",
-    y="PC2",
-    hue="Breed",
-    palette=palette,
-    s=35,
-    alpha=0.8,
-    linewidth=0.2,
-    edgecolor="black",
-    legend=False
-    )
+# y_min = -0.05
+# y_max = 0.01
 
 
-axins.set_xlim(x_min, x_max)
-axins.set_ylim(y_min, y_max)
+# axins = inset_axes(
+#     ax,
+#     width="40%",
+#     height="40%",
+#     loc="center right"
+# )
 
-axins.set_xlabel("PC1", fontsize=9)
-axins.set_ylabel("PC2", fontsize=9)
-axins.tick_params(axis="both",labelsize=6)
+# sns.scatterplot(
+#     data=WILD_COHORT,
+#     x="PC1",
+#     y="PC2",
+#     hue="Breed",
+#     palette=palette,
+#     s=35,
+#     alpha=0.8,
+#     linewidth=0.2,
+#     edgecolor="black",
+#     legend=False
+#     )
 
-mark_inset(
-    ax,
-    axins,
-    loc1=2,
-    loc2=4,
-    fc="none",
-    ec="black",
-    linewidth=1
-)
 
-plt.tight_layout()
+# axins.set_xlim(x_min, x_max)
+# axins.set_ylim(y_min, y_max)
+
+# axins.set_xlabel("PC1", fontsize=9)
+# axins.set_ylabel("PC2", fontsize=9)
+# axins.tick_params(axis="both",labelsize=6)
+
+# mark_inset(
+#     ax,
+#     axins,
+#     loc1=2,
+#     loc2=4,
+#     fc="none",
+#     ec="black",
+#     linewidth=1
+# )
+
+# plt.tight_layout()
 
 sns.despine()
 plt.tight_layout()
-plt.savefig(os.path.join(outdir,"nO_Wild_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Wild_Only_PCA_1_2.png"), dpi=600, bbox_inches="tight")
 
 plt.close()
 #--------------------Wild Only Set PCs 3-4 -------------------#
@@ -637,7 +630,7 @@ plt.legend(
 
 sns.despine()
 plt.tight_layout()
-plt.savefig(os.path.join(outdir,"nO_Wild_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
+plt.savefig(os.path.join(outdir,"Wild_Only_PCA_3_4.png"), dpi=600, bbox_inches="tight")
 
 
 plt.close()
